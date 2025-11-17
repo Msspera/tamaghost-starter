@@ -1,7 +1,15 @@
 
 services:
   web:
-    build: ./apps/web
+    build: 
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_INTERACTIONS_URL: ${NEXT_PUBLIC_API_INTERACTIONS_URL}
+        NEXT_PUBLIC_API_PET_URL: ${NEXT_PUBLIC_API_PET_URL}
+        NEXT_PUBLIC_API_COMMENTS_URL: ${NEXT_PUBLIC_API_COMMENTS_URL}
+        NEXT_PUBLIC_API_LEADERBOARD_URL: ${NEXT_PUBLIC_API_LEADERBOARD_URL}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL}
+        NEXT_PUBLIC_ASSET_BASE_URL: ${NEXT_PUBLIC_ASSET_BASE_URL}
     container_name: tamaghost-web
     ports:
       - "3000:3000"
@@ -104,21 +112,23 @@ services:
 
   # Infra (local)
   redpanda:
-    image: docker.redpanda.com/redpanda/redpanda:v23.3.12
+    image: redpandadata/redpanda:v23.3.12
     container_name: redpanda
     command: >
       redpanda start --overprovisioned --smp 1 --memory 512M --reserve-memory 0M
       --node-id 0 --check=false --set redpanda.auto_create_topics_enabled=true
+      --kafka-addr PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:19092
+      --advertise-kafka-addr PLAINTEXT://redpanda:9092,OUTSIDE://localhost:9092
     ports:
-      - "9092:9092"
+      - "9092:19092"
     healthcheck:
-      test: ["CMD", "bash", "-c", "rpk cluster info -X brokers=localhost:9092 || exit 1"]
+      test: ["CMD", "bash", "-c", "rpk cluster info -X brokers=localhost:19092 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
 
   console:
-    image: docker.redpanda.com/redpanda/console:v2.6.0
+    image: redpandadata/console:v2.6.0
     container_name: redpanda-console
     ports:
       - "8081:8080"
