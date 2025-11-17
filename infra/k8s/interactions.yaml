@@ -1,0 +1,27 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: interactions, namespace: tamaghost }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: interactions } }
+  template:
+    metadata: { labels: { app: interactions } }
+    spec:
+      containers:
+        - name: interactions
+          image: <ocir>/<repo>/tamaghost-interactions:latest
+          env:
+            - { name: KAFKA_BROKERS, valueFrom: { secretKeyRef: { name: streaming, key: brokers } } }
+            - { name: KAFKA_SASL_ENABLED, value: "true" }
+            - { name: KAFKA_SSL_ENABLED, value: "true" }
+            - { name: KAFKA_SASL_USERNAME, valueFrom: { secretKeyRef: { name: streaming, key: username } } }
+            - { name: KAFKA_SASL_PASSWORD, valueFrom: { secretKeyRef: { name: streaming, key: password } } }
+          ports: [{ containerPort: 4001 }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: interactions, namespace: tamaghost }
+spec:
+  selector: { app: interactions }
+  ports: [{ name: http, port: 80, targetPort: 4001 }]

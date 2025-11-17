@@ -1,0 +1,43 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: leaderboard-worker, namespace: tamaghost }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: leaderboard-worker } }
+  template:
+    metadata: { labels: { app: leaderboard-worker } }
+    spec:
+      containers:
+        - name: leaderboard-worker
+          image: <ocir>/<repo>/tamaghost-leaderboard-worker:latest
+          env:
+            - { name: KAFKA_BROKERS, valueFrom: { secretKeyRef: { name: streaming, key: brokers } } }
+            - { name: KAFKA_SASL_ENABLED, value: "true" }
+            - { name: KAFKA_SSL_ENABLED, value: "true" }
+            - { name: KAFKA_SASL_USERNAME, valueFrom: { secretKeyRef: { name: streaming, key: username } } }
+            - { name: KAFKA_SASL_PASSWORD, valueFrom: { secretKeyRef: { name: streaming, key: password } } }
+            - { name: REDIS_URL, valueFrom: { secretKeyRef: { name: cache, key: url } } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: leaderboard-api, namespace: tamaghost }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: leaderboard-api } }
+  template:
+    metadata: { labels: { app: leaderboard-api } }
+    spec:
+      containers:
+        - name: leaderboard-api
+          image: <ocir>/<repo>/tamaghost-leaderboard-api:latest
+          env:
+            - { name: REDIS_URL, valueFrom: { secretKeyRef: { name: cache, key: url } } }
+          ports: [{ containerPort: 4005 }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: leaderboard-api, namespace: tamaghost }
+spec:
+  selector: { app: leaderboard-api }
+  ports: [{ name: http, port: 80, targetPort: 4005 }]

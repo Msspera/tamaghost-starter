@@ -1,0 +1,21 @@
+{
+  "name": "tamaghost-comments",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --loader ts-node/esm src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "fastify": "5.6.2",
+    "@fastify/cors": "10.0.1",
+    "better-sqlite3": "9.6.0",
+    "dotenv": "16.4.5"
+  },
+  "devDependencies": {
+    "ts-node": "10.9.2",
+    "typescript": "5.6.3"
+  }
+}

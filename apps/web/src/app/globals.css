@@ -1,0 +1,10 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+body { @apply bg-slate-950 text-slate-100; }
+.gradient-ghost {
+  background: radial-gradient(60% 60% at 50% 40%, rgba(255,255,255,0.9), rgba(255,255,255,0.1));
+}

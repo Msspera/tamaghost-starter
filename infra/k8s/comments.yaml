@@ -1,0 +1,25 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: comments, namespace: tamaghost }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: comments } }
+  template:
+    metadata: { labels: { app: comments } }
+    spec:
+      containers:
+        - name: comments
+          image: <ocir>/<repo>/tamaghost-comments:latest
+          env:
+            - { name: DB_MODE, value: "ajd" }
+            - { name: AJD_SODA_BASE_URL, valueFrom: { secretKeyRef: { name: ajd, key: soda_url } } }
+            - { name: AJD_SODA_AUTH_TOKEN, valueFrom: { secretKeyRef: { name: ajd, key: token } } }
+          ports: [{ containerPort: 4003 }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: comments, namespace: tamaghost }
+spec:
+  selector: { app: comments }
+  ports: [{ name: http, port: 80, targetPort: 4003 }]
