@@ -42,9 +42,22 @@ export default function Page({ params }: { params: { petId: string } }) {
   useEffect(() => {
     fetchState();
     fetchLeaderboard();
+
+    // --- ATUALIZAÇÃO AUTOMÁTICA (Polling) ---
+    // Chama o fetchState a cada 10 segundos para refletir o decaimento
+    const intervalId = setInterval(() => {
+      fetchState();
+    }, 3000); 
+
+    // Listeners do Chat
     socket.on('msg', (data:any) => setChat(c => [...c.slice(-30), data]));
     socket.on('system', (data:any) => setChat(c => [...c.slice(-30), {u:'tamaghost', m:data.message, t:Date.now()}]));
-    return () => { socket.close(); }
+    
+    // Cleanup ao sair da página
+    return () => { 
+      socket.close();
+      clearInterval(intervalId); // Importante para não deixar o timer rodando no fundo
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -68,7 +81,11 @@ export default function Page({ params }: { params: { petId: string } }) {
     <div className="space-y-1">
       <div className="text-sm text-slate-300">{label}</div>
       <div className="w-full bg-slate-800 rounded h-2 overflow-hidden">
-        <div className={clsx('h-2', color)} style={{ width: `${Math.max(0, Math.min(100,v))}%`}}/>
+        {/* Adicionado 'transition-all duration-700' para suavizar a mudança */}
+        <div 
+          className={clsx('h-2 transition-all duration-700 ease-in-out', color)} 
+          style={{ width: `${Math.max(0, Math.min(100,v))}%`}}
+        />
       </div>
     </div>
   );
