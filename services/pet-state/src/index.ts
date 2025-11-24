@@ -5,6 +5,10 @@ import { Kafka } from 'kafkajs';
 import Database from 'better-sqlite3';
 import 'dotenv/config';
 
+// CONFIGURAÇÃO DE DECAIMENTO
+const DECAY_INTERVAL_MS = 10_000; // 10 segundos
+const DECAY_PERCENT = 5;          // 1% (ou 1 ponto)
+
 const fastify = Fastify({ logger: false });
 await fastify.register(cors, { origin: process.env.CORS_ALLOW_ORIGIN || '*' });
 
@@ -24,13 +28,45 @@ if (mode === 'sqlite') {
 
 function get(petId:string) {
   const row = db.prepare('SELECT * FROM pet_state WHERE pet_id = ?').get(petId);
+  
+  // Se não existir, cria o padrão (sem alterações aqui)
   if (!row) {
     const now = Date.now();
     db.prepare('INSERT OR REPLACE INTO pet_state (pet_id,hunger,happiness,cleanliness,mood,outfit,last_updated) VALUES (?,?,?,?,?,?,?)')
       .run(petId, 50, 50, 50, 'curioso', JSON.stringify([]), now);
     return { id: petId, hunger: 50, happiness: 50, cleanliness: 50, mood:'curioso', outfit:[], lastUpdated: now };
   }
-  return { id: row.pet_id, hunger: row.hunger, happiness: row.happiness, cleanliness: row.cleanliness, mood: row.mood, outfit: JSON.parse(row.outfit||'[]'), lastUpdated: row.last_updated };
+
+  // LÓGICA DE DECAIMENTO (Lazy Decay)
+  const now = Date.now();
+  const elapsed = now - row.last_updated;
+  const ticks = Math.floor(elapsed / DECAY_INTERVAL_MS); // Quantos intervalos de 10s passaram
+
+  let { hunger, happiness, cleanliness } = row;
+
+  if (ticks > 0) {
+    const decayAmount = ticks * DECAY_PERCENT;
+
+    // Fome aumenta (máximo 100)
+    hunger = Math.min(100, hunger + decayAmount);
+    
+    // Felicidade e Limpeza diminuem (mínimo 0)
+    happiness = Math.max(0, happiness - decayAmount);
+    cleanliness = Math.max(0, cleanliness - decayAmount);
+  }
+
+  // Retorna o estado calculado "ao vivo"
+  return { 
+    id: row.pet_id, 
+    hunger: hunger, 
+    happiness: happiness, 
+    cleanliness: cleanliness, 
+    mood: row.mood, 
+    outfit: JSON.parse(row.outfit||'[]'), 
+    lastUpdated: row.last_updated 
+    // Nota: Mantemos o lastUpdated original do banco para que o cálculo 
+    // continue consistente até que haja uma nova interação (que salvará o novo estado).
+  };
 }
 
 function save(p:any) {
