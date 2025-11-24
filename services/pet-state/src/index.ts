@@ -6,8 +6,8 @@ import Database from 'better-sqlite3';
 import 'dotenv/config';
 
 // CONFIGURAÇÃO DE DECAIMENTO
-const DECAY_INTERVAL_MS = 10_000; // 10 segundos
-const DECAY_PERCENT = 5;          // 1% (ou 1 ponto)
+const DECAY_INTERVAL_MS = 5_000; //  milissegundos
+const DECAY_PERCENT = 2;          // pontos / %
 
 const fastify = Fastify({ logger: false });
 await fastify.register(cors, { origin: process.env.CORS_ALLOW_ORIGIN || '*' });
