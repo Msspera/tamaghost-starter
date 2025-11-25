@@ -10,6 +10,7 @@ NC='\033[0m' # No Color
 KEYS="lb:total lb:feed lb:pet lb:bath lb:buy_outfit lb:change_look"
 
 echo -e "${GREEN}🧹 Iniciando limpeza do Ranking Tamaghost...${NC}"
+docker compose up -d
 
 # Verifica se o container do Redis está rodando (nome 'redis' conforme docker-compose.yml)
 if [ "$(docker ps -q -f name=redis)" ]; then
